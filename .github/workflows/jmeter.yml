@@ -1,0 +1,79 @@
+name: Performance Test Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      jmx_file:
+        description: 'Nombre del archivo .jmx de JMeter'
+        required: true
+        default: 'LoginOrange.jmx'
+
+jobs:
+  performance_run:
+    runs-on: ubuntu-24.04
+    env:
+      JMETER_VERSION: 5.6.3
+      JMETER_HOME: ${{ github.workspace }}/apache-jmeter-5.6.3
+
+    steps:
+      - name: ⚙️ Checkout del Robot (Este Repositorio)
+        uses: actions/checkout@v4
+
+      - name: 📦 Instalar Maven y Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: ⬇️ Download and Setup Apache JMeter
+        run: |
+         wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${{ env.JMETER_VERSION }}.zip
+         unzip apache-jmeter-${{ env.JMETER_VERSION }}.zip
+         echo "${{ env.JMETER_HOME }}/bin" >> $GITHUB_PATH
+
+      - name: 🧩 Install JMeter Plugins Manager and Required Plugins
+        run: |
+          PLUGINS_MANAGER_JAR="jmeter-plugins-manager-1.9.jar"
+          PLUGINS_MANAGER_URL="https://repo1.maven.org/maven2/kg/apc/jmeter-plugins-manager/1.9/jmeter-plugins-manager-1.9.jar"
+          
+          echo "Descargando Plugins Manager JAR..."
+          wget https://repo1.maven.org/maven2/kg/apc/jmeter-plugins-manager/1.9/jmeter-plugins-manager-1.9.jar -P ${{ env.JMETER_HOME }}/lib/ext/
+        
+          wget https://repo1.maven.org/maven2/kg/apc/cmdrunner/2.3/cmdrunner-2.3.jar -P ${{ env.JMETER_HOME }}/lib/
+            
+          java -cp ${{ env.JMETER_HOME }}/lib/ext/jmeter-plugins-manager-1.9.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
+          echo "Instalando plugins requeridos usando ${PLUGINS_CMD_PATH}..."
+          chmod +x ${{ env.JMETER_HOME }}/bin/PluginsManagerCMD.sh
+          ${{ env.JMETER_HOME }}/bin/PluginsManagerCMD.sh install jpgc-casutg,jpgc-perfmon,jpgc-standard
+
+      - name: 🚀 Setup and Start PerfMon ServerAgent
+        run: |
+          # Descargar el agente que monitorea el servidor
+          wget https://github.com/undera/perfmon-agent/releases/download/2.2.3/ServerAgent-2.2.3.zip
+          unzip ServerAgent-2.2.3.zip -d server-agent
+          mv server-agent/ServerAgent-2.2.3/* server-agent/
+          chmod +x server-agent/startAgent.sh
+          
+          # EJECUTAR EN SEGUNDO PLANO (&) para que no bloquee el pipeline
+          nohup ./server-agent/startAgent.sh --udp-port 0 --tcp-port 4444 > agent.log 2>&1 &
+          
+          # Esperar un par de segundos a que el agente inicie
+          sleep 5
+
+      - name: 🏃 Ejecutar Pruebas de Carga con JMeter
+        run: |
+            # Asegurarse de que el directorio de resultados existe
+            mkdir -p results
+            mkdir -p results/html_report
+            
+            # Ejecutamos jmeter.sh usando la ruta completa
+            jmeter.sh -n -t ${{ github.event.inputs.jmx_file }} \
+                   -Jresults_path=results -l results/results.jtl  -e -o results/html_report 
+          
+      - name: 📤 Upload Performance Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-reports
+          path: |
+            results/
+          include-hidden-files: true
