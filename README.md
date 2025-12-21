@@ -11,14 +11,20 @@ Esto estilo de recoleccion de datos de Performance (comportamiento del host), so
 * Java 17
 
 ## 🚀 Pipeline de Ejecucion en GibhubActions
-El pipeline descarga Jmeter. Descarga e instala los plugins utilizados en el script.
-Igualmente descarga, configura y ejecuta PerfMon ServerAgent.
-Una vez este todo configurado, ejecuta la prueba y genera el reporte HTML.
+Este pipeline corre en Github Actions. 
+Los pasos que realiza son los siguientes:
+Descarga Jmeter. 
+Descarga e instala los plugins utilizados en el script.
+Descarga, configura y ejecuta PerfMon ServerAgent.
+Ejecuta la prueba y genera el reporte HTML.
+Exporta los reportes jtl y hmtl para que puedan ser descargados de Artifacts.
 
 El pipeline corre en sistema operativo Ubuntu 24.04. Sin embargo, la automatizaicon podria usarse en entornos windows o cualquier otra distribucion Linux.
 
-Tambien se puede clonar el repositorio y ejecutar la prueba de la siguiente manera:
+Para usarse de manera local, se puede clonar el repositorio y ejecutar la prueba de la siguiente manera:
 git clone https://github.com/recursosparatesting/OrangeHrmDemoPNF.git
 mkdir results
 mkdir results/html_report
 jmeter.sh -n -t LoginOrange.jmx -Jresults_path=results -l results/results.jtl  -e -o results/html_report 
+
+El archivo datos.cvs tiene la informacion de usuario y contraseña para realizar el login.
