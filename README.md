@@ -16,3 +16,9 @@ Igualmente descarga, configura y ejecuta PerfMon ServerAgent.
 Una vez este todo configurado, ejecuta la prueba y genera el reporte HTML.
 
 El pipeline corre en sistema operativo Ubuntu 24.04. Sin embargo, la automatizaicon podria usarse en entornos windows o cualquier otra distribucion Linux.
+
+Tambien se puede clonar el repositorio y ejecutar la prueba de la siguiente manera:
+git clone https://github.com/recursosparatesting/OrangeHrmDemoPNF.git
+mkdir results
+mkdir results/html_report
+jmeter.sh -n -t LoginOrange.jmx -Jresults_path=results -l results/results.jtl  -e -o results/html_report 

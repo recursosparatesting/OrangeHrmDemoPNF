@@ -1,4 +1,4 @@
-name: Performance Test Pipeline
+name: Concurrencia Test Pipeline
 
 on:
   workflow_dispatch:
@@ -58,7 +58,7 @@ jobs:
           nohup ./server-agent/startAgent.sh --udp-port 0 --tcp-port 4444 > agent.log 2>&1 &
           
           # Esperar un par de segundos a que el agente inicie
-          sleep 5
+          sleep 20
 
       - name: 🏃 Ejecutar Pruebas de Carga con JMeter
         run: |
